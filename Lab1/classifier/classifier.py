@@ -2,6 +2,7 @@ import os.path
 import numpy as np
 import matplotlib.pyplot as plt
 import util
+import math
 
 def learn_distributions(file_lists_by_category):
     """
@@ -58,6 +59,17 @@ def learn_distributions(file_lists_by_category):
 
     return probabilities_by_category
 
+def aaaaa(word_prob_vector, word_freq_vector):
+    result = 1.0
+    for kvp in word_prob_vector.items():
+        if kvp[0] not in word_freq_vector:
+            continue
+        result *= math.pow(kvp[1], word_freq_vector[kvp[0]])
+
+    print(result)
+    return result
+
+
 def classify_new_email(filename,probabilities_by_category,prior_by_category):
     """
     Use Naive Bayes classification to classify the email in the given file.
@@ -78,7 +90,31 @@ def classify_new_email(filename,probabilities_by_category,prior_by_category):
     """
     ### TODO: Write your code here
     
-    
+    # Get the word count vector
+    x = util.get_word_freq([filename])
+
+    # Common for both classes, P(X)
+    # p_x = math.log(prior_by_category[0]*aaaaa(probabilities_by_category[0], x) + prior_by_category[1]*aaaaa(probabilities_by_category[1], x))
+
+    # log_p_spam = math.log(prior_by_category[0]) - p_x
+    # log_p_ham = math.log(prior_by_category[1]) - p_x
+    log_p_spam = math.log(prior_by_category[0])
+    log_p_ham = math.log(prior_by_category[1])
+
+    for word_pair in x.items():
+        if word_pair[0] not in probabilities_by_category[0].keys():
+            continue
+        log_p_spam += word_pair[1] * math.log(probabilities_by_category[0][word_pair[0]])
+        log_p_ham += word_pair[1] * math.log(probabilities_by_category[1][word_pair[0]])
+
+    result_str = ""
+    if log_p_spam > log_p_ham:
+        result_str = "spam"
+    else:
+        result_str = "ham"
+
+    # Currently log_p_spam and log_p_ham are off by a factor of P(X)
+    classify_result = (result_str, [log_p_spam, log_p_ham])
     return classify_result
 
 if __name__ == '__main__':

@@ -19,9 +19,43 @@ def learn_distributions(file_lists_by_category):
     the second element is a dict whose keys are words, and whose values are the 
     smoothed estimates of q_d 
     """
-    ### TODO: Write your code here
-    
-    
+
+    all_words = {}
+    for i in range(2):
+        counts = util.get_counts(file_lists_by_category[i])
+        for word in counts:
+            all_words[word] = True
+
+    spam_frequencies = util.get_word_freq(file_lists_by_category[0])
+    ham_frequencies = util.get_word_freq(file_lists_by_category[1])
+
+    # Add non-existant words to each dict
+    for word in all_words.keys():
+        if word not in spam_frequencies.keys():
+            spam_frequencies[word] = 0
+        if word not in ham_frequencies.keys():
+            ham_frequencies[word] = 0
+
+    num_words = len(all_words.keys())
+
+    num_spam_words = sum(spam_frequencies.values())
+    num_ham_words = sum(ham_frequencies.values())
+
+    spam_denominator = num_spam_words + num_words
+    ham_demoninator = num_ham_words + num_words
+
+    spam_word_probabilities_laplace = {}
+    ham_word_probabilities_laplace = {}
+    for pair in spam_frequencies.items():
+        spam_word_probabilities_laplace[pair[0]] = (pair[1] + 1.0) / spam_denominator
+    for pair in ham_frequencies.items():
+        ham_word_probabilities_laplace[pair[0]] = (pair[1] + 1.0) / ham_demoninator
+
+    probabilities_by_category = [
+        spam_word_probabilities_laplace,
+        ham_word_probabilities_laplace
+    ]
+
     return probabilities_by_category
 
 def classify_new_email(filename,probabilities_by_category,prior_by_category):

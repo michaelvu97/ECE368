@@ -42,8 +42,8 @@ def learn_distributions(file_lists_by_category):
     num_spam_words = sum(spam_frequencies.values())
     num_ham_words = sum(ham_frequencies.values())
 
-    spam_denominator = num_spam_words + num_words
-    ham_demoninator = num_ham_words + num_words
+    spam_denominator = float(num_spam_words + num_words)
+    ham_demoninator = float(num_ham_words + num_words)
 
     spam_word_probabilities_laplace = {}
     ham_word_probabilities_laplace = {}
@@ -98,13 +98,11 @@ def classify_new_email(filename,probabilities_by_category,prior_by_category):
         log_p_ham += word_pair[1] * math.log(probabilities_by_category[1][word_pair[0]])
 
     beta = logSum(log_p_spam, log_p_ham)
-    print(" ")
 
     log_p_spam -= beta
     log_p_ham -= beta
 
-    print(log_p_spam)
-    print(log_p_ham)
+    # print((log_p_spam, log_p_ham))
 
     result_str = ""
     if log_p_spam > log_p_ham:
@@ -112,7 +110,6 @@ def classify_new_email(filename,probabilities_by_category,prior_by_category):
     else:
         result_str = "ham"
 
-    # Currently log_p_spam and log_p_ham are off by a factor of P(X)
     classify_result = (result_str, [log_p_spam, log_p_ham])
     return classify_result
 
@@ -169,6 +166,42 @@ if __name__ == '__main__':
     
     ### TODO: Write your code here to modify the decision rule such that
     ### Type 1 and Type 2 errors can be traded off, plot the trade-off curve
-   
+    priors_by_category = [1e-23, 1e-22,1e-21, 1e-20, 1e-18, 1e-14, 1e-13, 1e-12, 1e-11, 
+        1e-10, 1e-9, 1e-8, 1e-7, 0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 
+        0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99, 0.999]
+
+    for i in range(len(priors_by_category)):
+        priors_by_category[i] = [priors_by_category[i], 1.0 - priors_by_category[i]]
+
+    errors = []
+    for prior in priors_by_category:
+        performance_measures = np.zeros([2,2])
+        for filename in (util.get_files_in_folder(test_folder)):
+            # Classify
+            label,log_posterior = classify_new_email(filename,
+                                                     probabilities_by_category,
+                                                     prior)
+            
+            # Measure performance (the filename indicates the true label)
+            base = os.path.basename(filename)
+
+            true_index = ('ham' in base) 
+            guessed_index = (label == 'ham')
+            performance_measures[int(true_index), int(guessed_index)] += 1
+
+        correct = np.diag(performance_measures)
+        # totals are obtained by summing across guessed labels
+        totals = np.sum(performance_measures, 1)
+        errors.append([totals[0] - correct[0], totals[1] - correct[1]])
+
+    print(errors)
+    plt.plot([x[0] for x in errors], [x[1] for x in errors], marker="o")
+    plt.xlabel("Type 1 Errors (Incorrectly identified as HAM)")
+    plt.ylabel("Type 2 Errors (Incorrectly identified as SPAM")
+    plt.margins(1, tight=False)
+    plt.show()
+
+
+
 
  

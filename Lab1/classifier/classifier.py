@@ -59,16 +59,10 @@ def learn_distributions(file_lists_by_category):
 
     return probabilities_by_category
 
-def aaaaa(word_prob_vector, word_freq_vector):
-    result = 1.0
-    for kvp in word_prob_vector.items():
-        if kvp[0] not in word_freq_vector:
-            continue
-        result *= math.pow(kvp[1], word_freq_vector[kvp[0]])
+def logSum(gamma1, gamma2):
+    maximum = max(gamma1, gamma2)
 
-    print(result)
-    return result
-
+    return maximum + math.log(math.exp(gamma1 - maximum) + math.exp(gamma2 - maximum))
 
 def classify_new_email(filename,probabilities_by_category,prior_by_category):
     """
@@ -94,10 +88,6 @@ def classify_new_email(filename,probabilities_by_category,prior_by_category):
     x = util.get_word_freq([filename])
 
     # Common for both classes, P(X)
-    # p_x = math.log(prior_by_category[0]*aaaaa(probabilities_by_category[0], x) + prior_by_category[1]*aaaaa(probabilities_by_category[1], x))
-
-    # log_p_spam = math.log(prior_by_category[0]) - p_x
-    # log_p_ham = math.log(prior_by_category[1]) - p_x
     log_p_spam = math.log(prior_by_category[0])
     log_p_ham = math.log(prior_by_category[1])
 
@@ -106,6 +96,15 @@ def classify_new_email(filename,probabilities_by_category,prior_by_category):
             continue
         log_p_spam += word_pair[1] * math.log(probabilities_by_category[0][word_pair[0]])
         log_p_ham += word_pair[1] * math.log(probabilities_by_category[1][word_pair[0]])
+
+    beta = logSum(log_p_spam, log_p_ham)
+    print(" ")
+
+    log_p_spam -= beta
+    log_p_ham -= beta
+
+    print(log_p_spam)
+    print(log_p_ham)
 
     result_str = ""
     if log_p_spam > log_p_ham:

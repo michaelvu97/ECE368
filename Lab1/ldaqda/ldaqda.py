@@ -28,23 +28,37 @@ def discrimAnalysis(x, y):
         else:
             x_female.append(x[i])
 
-    mu_male = np.average(x_male)
-    mu_female = np.average(x_female)
+    mu_male = np.average(x_male, axis=0)
+    mu_female = np.average(x_female, axis=0)
 
-    mu = np.average(x)
-    cov = np.average(np.matmul((x - mu),np.transpose(x - mu)))
+    mu = np.average(x, axis=0)
+    cov = np.matmul((x - mu),np.transpose(x - mu)) / len(x)
 
-    cov_male = np.average(np.matmul(x_male - mu_male, np.transpose(x_male - mu_male)))
-    cov_female = np.average(np.matmul(x_female - mu_female, np.transpose(x_female - mu_female)))
+    cov_male = np.matmul(np.transpose(x_male - mu_male), x_male - mu_male) / len(x_male)
+    cov_female = np.matmul(np.transpose(x_female - mu_female), x_female - mu_female) / len(x_female)
 
-    male_dist_mesh = np.meshgrid(np.linspace(50, 80), np.linspace(80,280))
-    female_dist_mesh = np.meshgrid(np.linspace(50, 80), np.linspace(80,280))
+    xv, yv = np.meshgrid(np.linspace(50, 80), np.linspace(80,280))
+
+    print(mu_male)
+    print(cov_male)
+
+    male_density = np.zeros((len(xv), len(yv)))
+    female_density = np.zeros((len(xv), len(yv)))
+    for x in range(len(xv)):
+        for y in range(len(yv)):
+            data_point = np.ndarray((1,2))
+            data_point[0,0] = xv[x,y]
+            data_point[0,1] = yv[x,y]
+            male_density[x,y] = util.density_Gaussian(mu_male, cov_male, data_point)
+            female_density[x,y] = util.density_Gaussian(mu_female, cov_female, data_point)
 
     # Visualization
     fig = plt.figure()
     ax1 = fig.add_subplot("111")
     ax1.plot(np.array(x_male)[...,0], np.array(x_male)[...,1], 'bs', label='male')
     ax1.plot(np.array(x_female)[...,0], np.array(x_female)[...,1], 'ro', label='female')
+    plt.contour(xv, yv, male_density)
+    plt.contour(xv, yv, female_density)
     plt.xlabel("height")
     plt.ylabel("weight")
     plt.legend()

@@ -115,7 +115,35 @@ def misRate(mu_male,mu_female,cov,cov_male,cov_female,x,y):
     A tuple of two elements: (mis rate in LDA, mis rate in QDA )
     """
     ### TODO: Write your code here
-   
+    
+    LDA_misses = 0.0
+    QDA_misses = 0.0
+    for i in range(len(y)):
+        data_point = np.zeros((1, 2))
+        data_point[0] = x[i]
+
+        male_probability_lda = util.density_Gaussian(mu_male, cov, data_point)
+        female_probability_lda = util.density_Gaussian(mu_female, cov, data_point)
+
+        male_probability_qda = util.density_Gaussian(mu_male, cov_male, data_point)
+        female_probability_qda = util.density_Gaussian(mu_female, cov_female, data_point)
+
+        y_hat_lda = 1
+        if female_probability_lda > male_probability_lda:
+            y_hat_lda = 2
+
+        y_hat_qda = 1
+        if female_probability_qda > male_probability_qda:
+            y_hat_qda = 2
+
+        if y_hat_lda != y[i]:
+            LDA_misses += 1
+
+        if y_hat_qda != y[i]:
+            QDA_misses += 1
+
+    mis_lda = LDA_misses / len(y)
+    mis_qda = QDA_misses / len(y)
     
     return (mis_lda, mis_qda)
 
@@ -132,7 +160,8 @@ if __name__ == '__main__':
     # misclassification rate computation
     mis_LDA,mis_QDA = misRate(mu_male,mu_female,cov,cov_male,cov_female,x_test,y_test)
     
-
+    print(mis_LDA)
+    print(mis_QDA)
     
     
     

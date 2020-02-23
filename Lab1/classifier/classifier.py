@@ -64,7 +64,7 @@ def logSum(gamma1, gamma2):
 
     return maximum + math.log(math.exp(gamma1 - maximum) + math.exp(gamma2 - maximum))
 
-def classify_new_email(filename,probabilities_by_category,prior_by_category):
+def classify_new_email(filename,probabilities_by_category,prior_by_category, gamma=1.0):
     """
     Use Naive Bayes classification to classify the email in the given file.
 
@@ -74,6 +74,8 @@ def classify_new_email(filename,probabilities_by_category,prior_by_category):
     probabilities_by_category: output of function learn_distributions
     prior_by_category: A two-element list as [\pi, 1-\pi], where \pi is the 
     parameter in the prior class distribution
+    gamma: Modifies the decision boundary weight. Higher gamma=high chance of 
+    HAM. Lower gamma=higher chance of SPAM.
 
     Output
     ------
@@ -105,7 +107,7 @@ def classify_new_email(filename,probabilities_by_category,prior_by_category):
     # print((log_p_spam, log_p_ham))
 
     result_str = ""
-    if log_p_spam > log_p_ham:
+    if log_p_spam > log_p_ham + math.log(gamma):
         result_str = "spam"
     else:
         result_str = "ham"
@@ -166,21 +168,16 @@ if __name__ == '__main__':
     
     ### TODO: Write your code here to modify the decision rule such that
     ### Type 1 and Type 2 errors can be traded off, plot the trade-off curve
-    priors_by_category = [1e-23, 1e-22,1e-21, 1e-20, 1e-18, 1e-14, 1e-13, 1e-12, 1e-11, 
-        1e-10, 1e-9, 1e-8, 1e-7, 0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 
-        0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99, 0.999]
-
-    for i in range(len(priors_by_category)):
-        priors_by_category[i] = [priors_by_category[i], 1.0 - priors_by_category[i]]
 
     errors = []
-    for prior in priors_by_category:
+    for gamma in np.logspace(-2.5, 22):
         performance_measures = np.zeros([2,2])
         for filename in (util.get_files_in_folder(test_folder)):
             # Classify
             label,log_posterior = classify_new_email(filename,
                                                      probabilities_by_category,
-                                                     prior)
+                                                     priors_by_category,
+                                                     gamma)
             
             # Measure performance (the filename indicates the true label)
             base = os.path.basename(filename)
@@ -194,7 +191,6 @@ if __name__ == '__main__':
         totals = np.sum(performance_measures, 1)
         errors.append([totals[0] - correct[0], totals[1] - correct[1]])
 
-    print(errors)
     plt.plot([x[0] for x in errors], [x[1] for x in errors], marker="o")
     plt.xlabel("Type 1 Errors (Incorrectly identified as HAM)")
     plt.ylabel("Type 2 Errors (Incorrectly identified as SPAM")

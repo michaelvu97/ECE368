@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import util
 
+xv, yv = np.meshgrid(np.linspace(-1,1),np.linspace(-1,1))
+
 def priorDistribution(beta):
     """
     Plot the contours of the prior distribution p(a)
@@ -15,7 +17,22 @@ def priorDistribution(beta):
     """
     ### TODO: Write your code here
 
+    mean_vec = [0.0, 0.0]
+    cov = [[beta, 0.0],[0.0, beta]]
+
+    z = np.zeros((len(xv), len(yv)))
+
+    for i in range(len(xv)):
+        for j in range(len(yv)):
+            a_0 = xv[i,j]
+            a_1 = yv[i,j]
+            z[i,j] = util.density_Gaussian(mean_vec, cov, np.stack([[a_0, a_1]]))
     
+    plt.contour(xv, yv, z)
+    plt.xlabel("a_0")
+    plt.ylabel("a_1")
+    plt.show()
+
     return 
     
 def posteriorDistribution(x,z,beta,sigma2):
@@ -35,7 +52,25 @@ def posteriorDistribution(x,z,beta,sigma2):
     Cov: covariance of the posterior distribution p(a|x,z)
     """
     ### TODO: Write your code here
-   
+
+    z = np.zeros((len(xv), len(yv)))
+    N = len(x)
+
+    for i in range(len(xv)):
+        for j in range(len(yv)):
+            a_0 = xv[i,j]
+            a_1 = yv[i,j]
+
+            sum_thing = 0
+            for i in range(N):
+                sum_thing += (z[i][0] - a_1 * x[i][0] - a_0) ** 2
+
+            z[i,j] = (1.0 / 2 * np.pi) * np.exp(-(a_0**2 + a_1**2)/(2*beta))*np.power(1.0/np.sqrt(2*np.pi*sigma2), N)*np.exp(-(1.0/(2*sigma2)) * sum_thing)
+
+    plt.contour(xv, yv, z)
+    plt.xlabel("a_0")
+    plt.ylabel("a_1")
+    plt.show()
    
     return (mu,Cov)
 

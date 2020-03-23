@@ -130,7 +130,7 @@ def predictionDistribution(x,beta,sigma2,mu,Cov,x_train,z_train):
     z_predictions = X @ mu
 
     variances = np.zeros(N_x)
-    print(X[0,:].shape)
+    
     for i in range(N_x):
         variances[i] = sigma2 + (np.transpose(X[i,:]) @ Cov @ X[i,:])
 

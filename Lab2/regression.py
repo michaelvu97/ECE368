@@ -129,8 +129,14 @@ def predictionDistribution(x,beta,sigma2,mu,Cov,x_train,z_train):
     
     z_predictions = X @ mu
 
+    variances = np.zeros(N_x)
+    print(X[0,:].shape)
+    for i in range(N_x):
+        variances[i] = sigma2 + (np.transpose(X[i,:]) @ Cov @ X[i,:])
+
     for i in range(N_x):
         plt.plot(x[i], z_predictions[i], 'r*')
+        plt.errorbar(x[i], z_predictions[i], np.sqrt(variances[i]), ecolor="red")
     plt.xlabel("x")
     plt.ylabel("z")
     plt.ylim(-4, 4)

@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import util
 
-xv, yv = np.meshgrid(np.linspace(-1,1),np.linspace(-1,1))
+xv, yv = np.meshgrid(np.linspace(-1.0,1.0, 100),np.linspace(-1.0,1.0, 100), indexing='xy')
+a_true = np.stack([[-0.1, -0.5]])
 
 def priorDistribution(beta):
     """
@@ -31,6 +32,7 @@ def priorDistribution(beta):
     plt.contour(xv, yv, z)
     plt.xlabel("a_0")
     plt.ylabel("a_1")
+    plt.plot(a_true[0,0], a_true[0,1], 'r*')
     plt.show()
 
     return 
@@ -53,23 +55,48 @@ def posteriorDistribution(x,z,beta,sigma2):
     """
     ### TODO: Write your code here
 
-    z = np.zeros((len(xv), len(yv)))
+    res = np.zeros((len(xv), len(yv)))
     N = len(x)
 
-    for i in range(len(xv)):
+    a_0_avg = 0.0
+    a_1_avg = 0.0
+
+    for k in range(len(xv)):
         for j in range(len(yv)):
-            a_0 = xv[i,j]
-            a_1 = yv[i,j]
+            a_0 = xv[k,j]
+            a_1 = yv[k,j]
 
-            sum_thing = 0
+            a_0_avg += a_0 / (len(xv) * len(yv))
+            a_1_avg += a_1 / (len(xv) * len(yv))
+
+            sum_thing = 0.0
             for i in range(N):
-                sum_thing += (z[i][0] - a_1 * x[i][0] - a_0) ** 2
+                sum_thing += np.square(z[i][0] - (a_1 * x[i][0]) - a_0)
 
-            z[i,j] = (1.0 / 2 * np.pi) * np.exp(-(a_0**2 + a_1**2)/(2*beta))*np.power(1.0/np.sqrt(2*np.pi*sigma2), N)*np.exp(-(1.0/(2*sigma2)) * sum_thing)
+            res[k,j] = np.exp( -((a_0**2 + a_1**2)/(2*beta)) - (sum_thing / (2*sigma2)))
 
-    plt.contour(xv, yv, z)
+    # mu_a|x,z is just a_MAP.
+
+    X = np.zeros((N,2))
+    for i in range(N):
+        X[i,0] = 1.0
+        X[i,1] = x[i]
+
+    # TODO double check
+    lam = sigma2 / beta
+
+    # Comput mu
+    mu = np.matmul(np.matmul(np.linalg.inv(np.matmul(np.transpose(X), X) + lam * np.identity(2)), np.transpose(X)),z)
+
+    # Compute cov
+    Cov = np.linalg.inv(np.transpose(X) @ X + lam * np.identity(2)) * sigma2
+
+    plt.contour(xv, yv, res)
     plt.xlabel("a_0")
     plt.ylabel("a_1")
+
+    plt.plot(a_true[0,0], a_true[0,1], 'r*')
+    plt.plot(mu[0], mu[1], 'g*')
     plt.show()
    
     return (mu,Cov)
@@ -92,8 +119,25 @@ def predictionDistribution(x,beta,sigma2,mu,Cov,x_train,z_train):
     """
     ### TODO: Write your code here
     
+    N_x = len(x)
+
+    # Reshape x
+    X = np.zeros((N_x,2))
+    for i in range(N_x):
+        X[i,0] = 1.0
+        X[i,1] = x[i]
     
-    return 
+    z_predictions = X @ mu
+
+    for i in range(N_x):
+        plt.plot(x[i], z_predictions[i], 'r*')
+    plt.xlabel("x")
+    plt.ylabel("z")
+    plt.ylim(-4, 4)
+    plt.scatter(x_train, z_train)
+    plt.show()
+
+    return
 
 if __name__ == '__main__':
     
@@ -106,22 +150,25 @@ if __name__ == '__main__':
     sigma2 = 0.1
     beta = 1
     
-    # number of training samples used to compute posterior
-    ns  = 5
-    
-    # used samples
-    x = x_train[0:ns]
-    z = z_train[0:ns]
-    
-    # prior distribution p(a)
     priorDistribution(beta)
-    
-    # posterior distribution p(a|x,z)
-    mu, Cov = posteriorDistribution(x,z,beta,sigma2)
-    
-    # distribution of the prediction
-    predictionDistribution(x_test,beta,sigma2,mu,Cov,x,z)
-    
+
+    ns_set = [1,5,100]
+
+    # number of training samples used to compute posterior
+    for ns in ns_set:
+        # used samples
+        x = x_train[0:ns]
+        z = z_train[0:ns]
+
+        # prior distribution p(a)
+
+
+        # posterior distribution p(a|x,z)
+        mu, Cov = posteriorDistribution(x,z,beta,sigma2)
+
+        # distribution of the prediction
+        predictionDistribution(x_test,beta,sigma2,mu,Cov,x,z)
+
 
    
 

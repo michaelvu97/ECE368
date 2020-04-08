@@ -39,6 +39,17 @@ def forward_backward(all_possible_hidden_states,
     
     # TODO: Compute the forward messages
     print("forwards")
+    for z in forward_messages[0]:
+        # Mask using the 0th observation
+        prob = forward_messages[0][z] * observation_model(z)[observations[0]]
+        forward_messages[0][z] = prob
+
+    # Remove 0-probability keys
+    keys_to_remove = [x for x in forward_messages[0].keys() if not x in forward_messages[0].get_probable_keys()]
+    for key in keys_to_remove:
+        del forward_messages[0][key]
+    forward_messages[0].renormalize()
+
     for i in range(num_time_steps):
         if i == 0:
             continue
@@ -54,7 +65,6 @@ def forward_backward(all_possible_hidden_states,
         forward_messages[i].renormalize()
 
     # TODO: Compute the backward messages
-    # dummy
     backward_messages[num_time_steps - 1] = Distribution()
     for z in all_possible_hidden_states:
         backward_messages[num_time_steps - 1][z] = 1.0
@@ -78,8 +88,9 @@ def forward_backward(all_possible_hidden_states,
     for i in range(num_time_steps):
         marginals[i] = Distribution()
         for z in forward_messages[i].get_probable_keys():
-            marginals[i][z] = forward_messages[i][z] * backward_messages[i][z]
-        print(i)
+            prob = forward_messages[i][z] * backward_messages[i][z]
+            if prob > 0:
+                marginals[i][z] = prob
         marginals[i].renormalize()
 
     return marginals
@@ -133,6 +144,7 @@ if __name__ == '__main__':
                                  observations)
     print('\n')
 
+    prior_distribution = rover.initial_distribution()
 
    
     timestep = num_time_steps - 1

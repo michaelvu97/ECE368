@@ -49,6 +49,14 @@ class Distribution(dict):
 
         return arg_max
 
+    def get_probable_keys(self):
+        res = []
+        for key in self.keys():
+            if self[key] > 0:
+                res.append(key)
+
+        return res
+
 def get_all_hidden_states():
     # lists all possible hidden states
     all_states = []

@@ -13,11 +13,16 @@ $$
 \\p(z_i|O)=\frac{1}{Z}\alpha_i(z_i)\beta_i(z_i)
 $$
 
-FB algorithm
+## 3
 
-Initialize forward and backward messages
+### 3.a)
 
-recursion relations of the messages
-
-Computation of the marginal distribution based on the messages
+$$
+\DeclareMathOperator{argmax}{\text{argmax}}
+\text{Initialization}
+\\w_1(z_1)=\log(p(z_1)p(o_1|z_1)
+\\\text{Recursion}
+\\w_i(z_i)=\log(p(o_i|z_i)) + \max_{z_{i-1}}\Big\{ \log(p(z_i|z_{i-1})) + w_{i-1}(z_{i-1}) \Big\}
+\\\phi_i(z_i)=\argmax_{z_{i-1}}\Big[ \log(p(z_{i-1}|z_i))+w_{i-1}(z_{i-1}) \Big]
+$$
 

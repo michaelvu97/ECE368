@@ -3,6 +3,9 @@ import graphics
 import rover
 from rover import Distribution
 
+def observe(observation_model_fixed):
+    return lambda state, observation: 1 if observation is None else observation_model_fixed(state)[observation]
+
 def forward_backward(all_possible_hidden_states,
                      all_possible_observed_states,
                      prior_distribution,
@@ -36,12 +39,14 @@ def forward_backward(all_possible_hidden_states,
     forward_messages[0] = prior_distribution
     backward_messages = [None] * num_time_steps
     marginals = [None] * num_time_steps 
+
+    observation_model = observe(observation_model)
     
     # TODO: Compute the forward messages
     print("forwards")
     for z in forward_messages[0]:
         # Mask using the 0th observation
-        prob = forward_messages[0][z] * observation_model(z)[observations[0]]
+        prob = forward_messages[0][z] * observation_model(z, observations[0])
         forward_messages[0][z] = prob
 
     # Remove 0-probability keys
@@ -56,7 +61,7 @@ def forward_backward(all_possible_hidden_states,
 
         forward_messages[i] = Distribution()
         for z_curr in all_possible_hidden_states:
-            observation_prob = observation_model(z_curr)[observations[i]]
+            observation_prob = observation_model(z_curr, observations[i])
             sum_prob = 0.0
 
             for z_prev in forward_messages[i - 1].get_probable_keys():
@@ -77,7 +82,7 @@ def forward_backward(all_possible_hidden_states,
         for z_curr in all_possible_hidden_states:
             prob = 0.0
             for z_next in backward_messages[i + 1].keys():
-                obs_prob = observation_model(z_next)[observations[i + 1]]
+                obs_prob = observation_model(z_next, observations[i + 1])
                 prob += backward_messages[i + 1][z_next] * obs_prob * transition_model(z_curr)[z_next]
             if prob > 0:
                 backward_messages[i][z_curr] = prob
@@ -113,7 +118,51 @@ def Viterbi(all_possible_hidden_states,
     """
 
     # TODO: Write your code here
+    observation_model = observe(observation_model)
+    N = len(observations)
+    w = [None] * N
+    phi = [None] * N
+
+    # Initialize w
+    w[0] = prior_distribution
+    for z in prior_distribution:
+        w[0][z] = np.log(w[0][z] * observation_model(z, observations[0]))
+
+    # Recursion
+    for i in range(1, N):
+        w[i] = Distribution()
+        phi[i - 1] = Distribution()
+        for z_curr in all_possible_hidden_states:
+            log_obs_prob = np.log(observation_model(z_curr, observations[i]))
+
+            maxval = -1 * np.inf
+            maxarg = None
+
+            for z_prev in w[i - 1]:
+                val = np.log(transition_model(z_prev)[z_curr]) + w[i - 1][z_prev]
+                if val > maxval:
+                    maxval = val
+                    maxarg = z_prev
+
+            w[i][z_curr] = maxval + log_obs_prob
+            phi[i - 1][z_curr] = maxarg
+
+    # Backtrack to find the most probable path
+    print("backtracking")
+    estimated_hidden_states = [None] * N
+    maxval = -1 * np.inf
+    maxarg = None
+
+    for z, prob in w[N - 1].items():
+        if prob > maxval:
+            maxval = prob
+            maxarg = z
     
+    estimated_hidden_states[N - 1] = maxarg
+
+    for i in reversed(range(0, N - 1)):
+        estimated_hidden_states[i] = phi[i][estimated_hidden_states[i + 1]]
+
     return estimated_hidden_states
 
 
@@ -121,7 +170,7 @@ if __name__ == '__main__':
    
     enable_graphics = True
     
-    missing_observations = False
+    missing_observations = True
     if missing_observations:
         filename = 'test_missing.txt'
     else:
@@ -147,7 +196,7 @@ if __name__ == '__main__':
     prior_distribution = rover.initial_distribution()
 
    
-    timestep = num_time_steps - 1
+    timestep = 30
     print("Most likely parts of marginal at time %d:" % (timestep))
     print(sorted(marginals[timestep].items(), key=lambda x: x[1], reverse=True)[:10])
     print('\n')

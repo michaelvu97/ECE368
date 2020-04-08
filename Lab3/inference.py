@@ -62,12 +62,11 @@ def forward_backward(all_possible_hidden_states,
 
     print("backwards")
     for i in reversed(range(num_time_steps - 1)):
-        print(i)
         backward_messages[i] = Distribution()
 
         for z_curr in all_possible_hidden_states:
             prob = 0.0
-            for z_next in all_possible_hidden_states:
+            for z_next in backward_messages[i + 1].keys():
                 obs_prob = observation_model(z_next)[observations[i + 1]]
                 prob += backward_messages[i + 1][z_next] * obs_prob * transition_model(z_curr)[z_next]
             if prob > 0:
@@ -156,7 +155,7 @@ if __name__ == '__main__':
   
     # if you haven't complete the algorithms, to use the visualization tool
     # let estimated_states = [None]*num_time_steps, marginals = [None]*num_time_steps
-    estimated_states = [None]*num_time_steps
+    # estimated_states = [None]*num_time_steps
     # marginals = [None]*num_time_steps
     if enable_graphics:
         app = graphics.playback_positions(hidden_states,

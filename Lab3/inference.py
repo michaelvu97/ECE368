@@ -129,6 +129,7 @@ def Viterbi(all_possible_hidden_states,
         w[0][z] = np.log(w[0][z] * observation_model(z, observations[0]))
 
     # Recursion
+    print("forward")
     for i in range(1, N):
         w[i] = Distribution()
         phi[i - 1] = Distribution()
@@ -213,7 +214,21 @@ if __name__ == '__main__':
     print("Last 10 hidden states in the MAP estimate:")
     for time_step in range(num_time_steps - 10, num_time_steps):
         print(estimated_states[time_step])
-  
+
+    viterbi_error = sum([0.0 if estimated_states[i] == hidden_states[i] else 1.0 for i in range(num_time_steps)]) / num_time_steps
+    fb_error = sum([0.0 if marginals[i].get_mode() == hidden_states[i] else 1.0 for i in range(num_time_steps)]) / num_time_steps
+
+    print("viterbi_error: " + str(viterbi_error))
+    print("fb_error: " + str(fb_error))
+
+    # Find violation
+    for i in range(num_time_steps - 1):
+        curr_est = marginals[i].get_mode()
+        next_est = marginals[i + 1].get_mode()
+        if (rover.transition_model(curr_est)[next_est] == 0.0):
+            print(str(i) + " to " + str(i + 1))
+
+
     # if you haven't complete the algorithms, to use the visualization tool
     # let estimated_states = [None]*num_time_steps, marginals = [None]*num_time_steps
     # estimated_states = [None]*num_time_steps

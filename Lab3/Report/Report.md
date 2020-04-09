@@ -26,3 +26,14 @@ $$
 \\\phi_i(z_i)=\argmax_{z_{i-1}}\Big[ \log(p(z_{i-1}|z_i))+w_{i-1}(z_{i-1}) \Big]
 $$
 
+## 4
+
+viterbi_error: 0.03
+$$
+\hat P_e=0.03
+\\\check P_e=0.02
+$$
+
+## 5
+
+$\check z_{64}\rarr \check z_{65}$ is an invalid transition.
